@@ -75,10 +75,25 @@ class ProgressBar:
 # Path helpers
 # ---------------------------------------------------------------------------
 
+def _cad_stem(input_path: Path) -> str:
+    """
+    Return the base stem of a CAD file, stripping Creo version suffixes.
+
+        wheel.prt.1  ->  "wheel"
+        engine.asm   ->  "engine"
+        part.stp     ->  "part"
+    """
+    if input_path.suffix.lstrip(".").isdigit():
+        return Path(input_path.stem).stem
+    return input_path.stem
+
+
 def resolve_output_path(input_path: Path, output_arg: str | None,
                         output_format: str = ".usd") -> Path:
     """
     Determine the output USD path from the input path and optional --output arg.
+
+    Handles Creo versioned filenames (e.g. wheel.prt.1 -> wheel.usd).
 
     Rules:
       - If output_arg is None: place output next to input with USD extension.
@@ -86,35 +101,69 @@ def resolve_output_path(input_path: Path, output_arg: str | None,
       - Otherwise: use output_arg as-is (must end in a USD extension).
     """
     usd_exts = {".usd", ".usda", ".usdc", ".usdz"}
+    stem = _cad_stem(input_path)
+    usd_name = stem + output_format
 
     if output_arg is None:
-        return input_path.with_suffix(output_format)
+        return input_path.parent / usd_name
 
     out = Path(output_arg)
 
     if out.is_dir():
-        return out / input_path.with_suffix(output_format).name
+        return out / usd_name
 
     if out.suffix.lower() not in usd_exts:
         # Treat as directory that doesn't exist yet
         out.mkdir(parents=True, exist_ok=True)
-        return out / input_path.with_suffix(output_format).name
+        return out / usd_name
 
     return out
 
 
-def find_cad_files(root: Path, recursive: bool = True) -> list[Path]:
+def find_cad_files(root: Path, recursive: bool = True,
+                   latest_only: bool = True) -> list[Path]:
     """
     Walk *root* and collect all files with supported CAD extensions.
-    Import here to avoid circular import with formats module.
+
+    Args:
+        root:        Directory to scan.
+        recursive:   Whether to recurse into subdirectories.
+        latest_only: If True (default), keep only the highest-versioned copy
+                     of each Creo file (e.g. wheel.prt.3 wins over .1 and .2).
+                     Non-versioned files are always included.
     """
-    from src.formats import ALL_SUPPORTED_EXTENSIONS
+    from src.formats import ALL_SUPPORTED_EXTENSIONS, real_suffix
 
     pattern = "**/*" if recursive else "*"
-    return sorted(
+    all_files = sorted(
         p for p in root.glob(pattern)
-        if p.is_file() and p.suffix.lower() in ALL_SUPPORTED_EXTENSIONS
+        if p.is_file() and real_suffix(p) in ALL_SUPPORTED_EXTENSIONS
     )
+
+    if not latest_only:
+        return all_files
+
+    # Deduplicate versioned Creo files: keep the highest version number.
+    # Key: (parent_dir, base_name_without_version)  e.g. (/cad, "wheel.prt")
+    # Value: (version_int, Path)  — -1 for non-versioned files
+    best: dict[tuple, tuple[int, Path]] = {}
+    for p in all_files:
+        suffix = p.suffix.lower()
+        if suffix.lstrip(".").isdigit():
+            try:
+                ver = int(suffix.lstrip("."))
+            except ValueError:
+                ver = 0
+            key = (p.parent, p.stem.lower())   # stem is e.g. "wheel.prt"
+        else:
+            ver = -1
+            key = (p.parent, p.name.lower())   # non-versioned, unique key
+
+        existing = best.get(key)
+        if existing is None or ver > existing[0]:
+            best[key] = (ver, p)
+
+    return sorted(path for _, path in best.values())
 
 
 # ---------------------------------------------------------------------------

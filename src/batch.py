@@ -20,7 +20,7 @@ from pathlib import Path
 
 from src.converter import CadToUsdConverter, ConversionResult
 from src.formats import ALL_SUPPORTED_EXTENSIONS, get_format_info
-from src.utils import find_cad_files, get_logger, human_size
+from src.utils import find_cad_files, get_logger, human_size, _cad_stem
 
 log = get_logger()
 
@@ -192,12 +192,17 @@ class BatchConverter:
 
     def _output_path(self, input_file: Path, input_root: Path,
                      output_root: Path | None) -> Path:
-        """Compute the output USD path preserving relative directory structure."""
-        if output_root is None:
-            return input_file.with_suffix(self.output_format)
+        """
+        Compute the output USD path preserving relative directory structure.
+        Strips Creo version suffixes (e.g. wheel.prt.1 -> wheel.usd).
+        """
+        usd_name = _cad_stem(input_file) + self.output_format
 
-        rel = input_file.relative_to(input_root)
-        return (output_root / rel).with_suffix(self.output_format)
+        if output_root is None:
+            return input_file.parent / usd_name
+
+        rel_dir = input_file.relative_to(input_root).parent
+        return output_root / rel_dir / usd_name
 
     def _should_skip(self, output_path: Path) -> bool:
         return self.skip_existing and output_path.exists()

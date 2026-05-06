@@ -169,15 +169,30 @@ _EXT_MAP: dict[str, FormatInfo] = _build_extension_map()
 ALL_SUPPORTED_EXTENSIONS: Set[str] = set(_EXT_MAP.keys())
 
 
+def real_suffix(path: str | Path) -> str:
+    """
+    Return the meaningful CAD file extension, stripping Creo version suffixes.
+
+    Creo appends an integer version number on every save, e.g.:
+        wheel.prt.1   ->  .prt
+        engine.asm.12 ->  .asm
+        part.stp      ->  .stp   (unchanged)
+    """
+    p = Path(path)
+    suffix = p.suffix.lower()
+    if suffix.lstrip(".").isdigit():
+        return Path(p.stem).suffix.lower()
+    return suffix
+
+
 def get_format_info(path: str | Path) -> FormatInfo | None:
     """Return the FormatInfo for a file, or None if unsupported."""
-    ext = Path(path).suffix.lower()
-    return _EXT_MAP.get(ext)
+    return _EXT_MAP.get(real_suffix(path))
 
 
 def is_supported(path: str | Path) -> bool:
     """Return True if the file extension is supported by the converter."""
-    return Path(path).suffix.lower() in _EXT_MAP
+    return real_suffix(path) in _EXT_MAP
 
 
 def requires_cad_license(path: str | Path) -> bool:
