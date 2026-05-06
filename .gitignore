@@ -1,0 +1,133 @@
+# =============================================================================
+# .gitignore for CAD2USD — Python + NVIDIA Omniverse Kit (Windows)
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Environment / Secrets
+# ---------------------------------------------------------------------------
+config.env
+.env
+.env.*
+!.env.example
+!config.env.example
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.installed.cfg
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.eggs/
+lib/
+lib64/
+wheels/
+share/python-wheels/
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.virtualenv/
+
+# ---------------------------------------------------------------------------
+# NVIDIA Omniverse / Kit
+# ---------------------------------------------------------------------------
+# Kit cache and runtime data
+_build/
+_compiler/
+_repo/
+kit/
+omni_cache/
+omniverse-kit-*-cache/
+*.kit.log
+*.nvapi
+.nvidia-omniverse/
+
+# Omniverse local settings
+user.config.json
+user.toml
+
+# ---------------------------------------------------------------------------
+# Test / Sample CAD & USD files
+# ---------------------------------------------------------------------------
+# Comment these out if you want to track sample files in the repo
+# *.prt  — kept: sample .prt file is tracked in the repo
+*.asm
+*.stp
+*.step
+*.igs
+*.iges
+# Keep committed .usd sample files — remove the next line if not desired
+# *.usd
+
+# ---------------------------------------------------------------------------
+# Logs & Output
+# ---------------------------------------------------------------------------
+*.log
+logs/
+output/
+converted/
+*.tmp
+*.temp
+
+# ---------------------------------------------------------------------------
+# Windows
+# ---------------------------------------------------------------------------
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# ---------------------------------------------------------------------------
+# IDEs & Editors
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+
+# ---------------------------------------------------------------------------
+# Pytest / Coverage
+# ---------------------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+nosetests.xml

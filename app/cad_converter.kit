@@ -1,0 +1,68 @@
+# =============================================================================
+# CAD to USD Converter — Kit Application Configuration
+# =============================================================================
+# This file configures the NVIDIA Omniverse Kit headless runtime used for
+# converting CAD files to USD via omni.kit.asset_converter.
+#
+# Usage (called by convert.bat / batch_convert.bat — do not run directly):
+#   kit.exe app\cad_converter.kit --exec app\run_conversion.py -- [args]
+# =============================================================================
+
+[package]
+title = "CAD to USD Converter"
+version = "1.0.0"
+description = "Headless CAD → USD conversion powered by omni.kit.asset_converter"
+keywords = ["cad", "usd", "converter", "headless", "creo"]
+
+# ---------------------------------------------------------------------------
+# Extension dependencies
+# ---------------------------------------------------------------------------
+[dependencies]
+# Core async event loop (required for headless apps)
+"omni.kit.loop-default" = {}
+
+# Asset converter — base (STEP, IGES, OBJ, FBX, glTF, STL)
+"omni.kit.asset_converter" = {}
+
+# CAD translator extension — Creo, CATIA, NX, SolidWorks, JT, Inventor
+# Auto-downloaded from the NVIDIA extension registry on first run
+"omni.kit.converter.cad" = {}
+
+# Minimal USD stage support
+"omni.usd" = {}
+
+# Progress and status reporting utilities
+"omni.kit.notification_manager" = {}
+
+# ---------------------------------------------------------------------------
+# Application settings
+# ---------------------------------------------------------------------------
+[settings]
+app.name = "CADConverter"
+app.version = "1.0.0"
+
+# Suppress the Kit splash screen and UI in headless mode
+app.window.hideUi = true
+app.window.width = 0
+app.window.height = 0
+
+# Disable renderer — we only need the conversion pipeline, not GPU rendering
+renderer.enabled = false
+app.renderer.skipWhileMinimized = false
+
+# Logging — set to "warn" to suppress Kit internals; converter uses Python logging
+log.level = "warn"
+log.channels."omni.kit.asset_converter" = "info"
+
+# Extension registry — Kit downloads missing extensions automatically
+[settings.app.extensions]
+registryEnabled = true
+supportedTargets.platform = "windows-x86_64"
+
+# ---------------------------------------------------------------------------
+# Telemetry — disable to avoid network calls in headless/CI environments
+# ---------------------------------------------------------------------------
+[settings.privacy]
+performance = false
+crashes = false
+usageStatistics = false

@@ -1,0 +1,36 @@
+# =============================================================================
+# CAD to USD Converter — Python Dependencies
+#
+# NVIDIA Omniverse Kit is published on NVIDIA's PyPI index.
+# Run install.bat which handles the index URL automatically, or install manually:
+#
+#   pip install omniverse-kit --extra-index-url https://pypi.nvidia.com
+#
+# Requires Python 3.12.
+# On first run, you will be prompted to accept the EULA once.
+# For headless/non-interactive use, set: OMNI_KIT_ACCEPT_EULA=yes
+#
+# Verify available versions:
+#   pip index versions omniverse-kit --extra-index-url https://pypi.nvidia.com
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# NVIDIA Omniverse Kit (pip package)
+# Installs the Kit runtime and the omni.* namespace in-process.
+# No separate Omniverse Launcher or kit.exe installation required.
+#
+# The package exists on public PyPI (https://pypi.org/project/omniverse-kit/)
+# but as a placeholder only. The actual wheel is served from pypi.nvidia.com,
+# which is also public — no NVIDIA account or API key required.
+# Ref: https://docs.omniverse.nvidia.com/kit/docs/kit-manual/latest/guide/kit_python_package.html
+# ---------------------------------------------------------------------------
+# NOTE: do NOT add --extra-index-url here — it can silently fail on some pip
+# versions on Windows. Pass it on the command line instead (install.bat does this):
+#   pip install omniverse-kit --extra-index-url https://pypi.nvidia.com
+omniverse-kit
+
+# ---------------------------------------------------------------------------
+# Optional: richer terminal output
+# Uncomment if you want colored logs and prettier progress bars.
+# ---------------------------------------------------------------------------
+# rich>=13.0
