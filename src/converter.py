@@ -27,6 +27,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+
+def _current_platform_tag() -> str:
+    if sys.platform == "win32":
+        return "windows-x86_64"
+    if sys.platform.startswith("linux"):
+        return "linux-x86_64"
+    raise RuntimeError(
+        f"Unsupported platform: {sys.platform}. "
+        "omniverse-kit supports Windows and Linux only (no macOS wheels)."
+    )
+
 from src.formats import get_format_info, is_supported
 from src.utils import get_logger, resolve_output_path
 
@@ -75,26 +86,32 @@ def _find_ov_launcher_ext_folders() -> list[str]:
     import glob
     folders = []
 
-    # Omniverse Launcher caches apps here on Windows
-    ov_pkg = os.path.join(os.environ.get("LOCALAPPDATA", ""), "ov", "pkg")
-    if not os.path.isdir(ov_pkg):
-        return folders
+    if sys.platform == "win32":
+        candidate_roots = [
+            os.path.join(os.environ.get("LOCALAPPDATA", ""), "ov", "pkg"),
+        ]
+    else:
+        # Linux: Omniverse Launcher caches apps under ~/.local/share/ov/pkg/
+        candidate_roots = [
+            os.path.join(os.path.expanduser("~"), ".local", "share", "ov", "pkg"),
+        ]
 
-    # Apps that ship the CAD Converter extension
     cad_app_patterns = [
         "cad-converter-*",
         "create-*",
         "usd-composer-*",
         "omni.create-*",
     ]
-    for pattern in cad_app_patterns:
-        for app_dir in glob.glob(os.path.join(ov_pkg, pattern)):
-            extscache = os.path.join(app_dir, "extscache")
-            exts = os.path.join(app_dir, "exts")
-            for d in (extscache, exts):
-                if os.path.isdir(d) and d not in folders:
-                    folders.append(d)
-                    log.debug("Found Omniverse ext folder: %s", d)
+    for ov_pkg in candidate_roots:
+        if not os.path.isdir(ov_pkg):
+            continue
+        for pattern in cad_app_patterns:
+            for app_dir in glob.glob(os.path.join(ov_pkg, pattern)):
+                for subdir in ("extscache", "exts"):
+                    d = os.path.join(app_dir, subdir)
+                    if os.path.isdir(d) and d not in folders:
+                        folders.append(d)
+                        log.debug("Found Omniverse ext folder: %s", d)
 
     return folders
 
@@ -113,16 +130,21 @@ def _ensure_kit_started(extra_extensions: list[str] | None = None) -> None:
     # Accept EULA non-interactively in pipeline/headless environments
     os.environ.setdefault("OMNI_KIT_ACCEPT_EULA", "yes")
 
+    # Kit refuses to start as root without this flag (common in Docker/CI)
+    if sys.platform != "win32" and os.getuid() == 0:
+        os.environ.setdefault("OMNI_KIT_ALLOW_ROOT", "1")
+
     try:
         # This MUST be the first omni import — sets up Carbonite + paths
         from omni.kit_app import KitApp  # noqa: PLC0415
     except ImportError as exc:
+        install_cmd = "install.bat" if sys.platform == "win32" else "install.sh"
         raise ImportError(
             "\n\nCould not import omni.kit_app (omniverse-kit package not found).\n\n"
             "Install it with:\n"
             "    pip install omniverse-kit --extra-index-url https://pypi.nvidia.com\n\n"
-            "Or run:  install.bat\n\n"
-            "Requires Python 3.12."
+            f"Or run:  {install_cmd}\n\n"
+            "Requires Python 3.12. Linux requires glibc >= 2.35 (Ubuntu 22.04+)."
         ) from exc
 
     _app = KitApp()
@@ -150,6 +172,7 @@ def _ensure_kit_started(extra_extensions: list[str] | None = None) -> None:
         # Headless — no window, no renderer, no GPU required
         "--no-window",
         "--/app/window/hideUi=true",
+        "--/app/fastShutdown=true",
         "--/renderer/enabled=false",
         "--/app/renderer/enabled=false",
         "--/app/runLoops/main/rateLimitEnabled=false",
@@ -158,7 +181,7 @@ def _ensure_kit_started(extra_extensions: list[str] | None = None) -> None:
         "--/app/privacy/consent/accept=true",
         # Extension registry — Kit 110 shared CDN
         "--/app/extensions/registryEnabled=true",
-        "--/app/extensions/supportedTargets/platform=windows-x86_64",
+        f"--/app/extensions/supportedTargets/platform={_current_platform_tag()}",
         "--enable", "omni.kit.registry.nucleus",
         "--/exts/omni.kit.registry.nucleus/registries/0/name=kit/shared",
         f"--/exts/omni.kit.registry.nucleus/registries/0/url={_REG_URL}",

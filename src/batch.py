@@ -9,7 +9,7 @@ Usage (from your own Python):
     results = BatchConverter().run(input_dir="./cad", output_dir="./usd")
 
 Or via the CLI:
-    batch_convert.bat  C:\Models\CAD  C:\Models\USD
+    batch_convert.bat  C:/Models/CAD  C:/Models/USD
 """
 
 import logging

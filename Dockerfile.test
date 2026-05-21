@@ -1,0 +1,64 @@
+FROM --platform=linux/amd64 ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    OMNI_KIT_ACCEPT_EULA=yes \
+    PYTHONDONTWRITEBYTECODE=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+
+WORKDIR /app
+COPY . /app/
+
+# Create venv + install omniverse-kit (Linux cp312 manylinux_2_35 wheel)
+RUN uv venv --python 3.12 .venv
+RUN uv pip install --python .venv/bin/python \
+    omniverse-kit \
+    --extra-index-url https://pypi.nvidia.com
+
+# Write config.env for the .sh scripts
+RUN printf 'PYTHON_EXE=/app/.venv/bin/python\nOMNI_KIT_ACCEPT_EULA=yes\nDEFAULT_OUTPUT_FORMAT=.usd\nTESSELLATION_CHORD=0.01\nTESSELLATION_ANGLE=30\n' > /app/config.env
+
+# Minimal ASCII STL test cube (open format, no CAD license needed)
+RUN cat > /tmp/test_cube.stl << 'EOF'
+solid cube
+  facet normal  0  0 -1
+    outer loop
+      vertex 0 0 0
+      vertex 1 0 0
+      vertex 1 1 0
+    endloop
+  endfacet
+  facet normal  0  0 -1
+    outer loop
+      vertex 0 0 0
+      vertex 1 1 0
+      vertex 0 1 0
+    endloop
+  endfacet
+  facet normal  0  0  1
+    outer loop
+      vertex 0 0 1
+      vertex 1 1 1
+      vertex 1 0 1
+    endloop
+  endfacet
+  facet normal  0  0  1
+    outer loop
+      vertex 0 0 1
+      vertex 0 1 1
+      vertex 1 1 1
+    endloop
+  endfacet
+endsolid cube
+EOF
+
+CMD ["/app/.venv/bin/python", "app/run_conversion.py", \
+     "--input", "/tmp/test_cube.stl", \
+     "--output", "/tmp/test_cube.usd", \
+     "--verbose"]

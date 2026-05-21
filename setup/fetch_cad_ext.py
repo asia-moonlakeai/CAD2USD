@@ -15,6 +15,17 @@ import os
 import sys
 import time
 
+
+def _current_platform_tag() -> str:
+    if sys.platform == "win32":
+        return "windows-x86_64"
+    if sys.platform.startswith("linux"):
+        return "linux-x86_64"
+    raise RuntimeError(
+        f"Unsupported platform: {sys.platform}. "
+        "omniverse-kit supports Windows and Linux only."
+    )
+
 os.environ.setdefault("OMNI_KIT_ACCEPT_EULA", "yes")
 
 # Kit 110 shared registry CDN
@@ -45,7 +56,7 @@ def main() -> int:
         "--/app/privacy/eula/accept=true",
         "--/app/privacy/consent/accept=true",
         "--/app/extensions/registryEnabled=true",
-        "--/app/extensions/supportedTargets/platform=windows-x86_64",
+        f"--/app/extensions/supportedTargets/platform={_current_platform_tag()}",
         "--enable", "omni.kit.registry.nucleus",
         "--/exts/omni.kit.registry.nucleus/registries/0/name=kit/shared",
         f"--/exts/omni.kit.registry.nucleus/registries/0/url={_REG_URL}",

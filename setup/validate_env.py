@@ -34,13 +34,13 @@ def validate() -> bool:
 
     all_ok = True
 
-    # 1. Python version — Windows wheels are cp312 only, no exceptions
+    # 1. Python version — omniverse-kit wheels are cp312 only, no exceptions
     major, minor = sys.version_info[:2]
     ok = major == 3 and minor == 12
     _check(
         f"Python {major}.{minor}",
         ok,
-        f"omniverse-kit Windows wheels are cp312 only. Current: {major}.{minor}\n"
+        f"omniverse-kit wheels are cp312 only. Current: {major}.{minor}\n"
         "Download Python 3.12: https://python.org/downloads/release/python-3120/",
     )
     all_ok &= ok
@@ -145,12 +145,14 @@ def validate() -> bool:
     # Summary
     print()
     print("=" * 62)
+    install_cmd = "install.bat" if sys.platform == "win32" else "install.sh"
+    convert_cmd = "convert.bat" if sys.platform == "win32" else "convert.sh"
     if all_ok:
         print("  All checks passed — ready to convert!")
         print()
-        print("  convert.bat  input.prt  output.usd")
+        print(f"  {convert_cmd}  input.prt  output.usd")
     else:
-        print("  Some checks failed — run install.bat to fix them.")
+        print(f"  Some checks failed — run {install_cmd} to fix them.")
     print("=" * 62)
     print()
 

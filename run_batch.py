@@ -16,7 +16,7 @@ import os
 sys.path.insert(0, str(Path(__file__).parent))
 
 from src.batch import BatchConverter
-from src.converter import CadToUsdConverter, find_kit_exe
+from src.converter import CadToUsdConverter
 from src.utils import setup_logging
 
 
@@ -58,17 +58,7 @@ def main() -> int:
     args = parse_args()
     log = setup_logging(verbose=args.verbose)
 
-    kit_exe = find_kit_exe()
-    if not kit_exe:
-        log.error(
-            "kit.exe not found. Run install.bat to configure your environment."
-        )
-        return 1
-
-    log.debug("Using kit.exe: %s", kit_exe)
-
     converter = CadToUsdConverter(
-        kit_exe=kit_exe,
         verbose=args.verbose,
         output_format=args.format,
     )
